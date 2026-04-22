@@ -2,7 +2,7 @@
 const jobsContainer = document.getElementById('jobs-container');
 const searchForm = document.getElementById('search-form');
 const jobTitleInput = document.getElementById('job-title');
-const jobLocationInput = document.getElementById('job-location'); // Not directly supported by Remotive API search query, but we can filter client-side
+const jobLocationInput = document.getElementById('job-location');
 const loader = document.getElementById('loader');
 
 // State
@@ -21,19 +21,18 @@ async function fetchJobs(searchTerm = '') {
             url += `?search=${encodeURIComponent(searchTerm)}`;
         } else {
             // Limit to Software Development category for initial load to be faster and relevant
-            url += '?category=software-dev&limit=20';
+            url += '?category=software-dev&limit=30';
         }
 
         const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Erreur réseau: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         allFetchedJobs = data.jobs || [];
         
-        // If we only wanted 20 for initial load but the API doesn't support limit perfectly, we slice it
-        if (!searchTerm) {
-            allFetchedJobs = allFetchedJobs.slice(0, 20);
-        }
-
         // Apply secondary local filter for location if user typed something
         const locationTerm = jobLocationInput.value.toLowerCase().trim();
         let filteredJobs = allFetchedJobs;
@@ -45,6 +44,9 @@ async function fetchJobs(searchTerm = '') {
             );
         }
 
+        // Limit to max 30 jobs to avoid browser freezing during rendering
+        filteredJobs = filteredJobs.slice(0, 30);
+
         renderJobs(filteredJobs);
     } catch (error) {
         console.error('Error fetching jobs:', error);
@@ -52,7 +54,7 @@ async function fetchJobs(searchTerm = '') {
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ff6b6b;">
                 <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; margin-bottom: 20px;"></i>
                 <h3>Erreur de connexion</h3>
-                <p>Impossible de récupérer les offres d'emploi pour le moment. Veuillez réessayer plus tard.</p>
+                <p>Impossible de récupérer les offres d'emploi. L'API est peut-être temporairement indisponible.</p>
             </div>
         `;
     } finally {
@@ -63,6 +65,7 @@ async function fetchJobs(searchTerm = '') {
 
 // Format Date
 function formatDate(dateString) {
+    if (!dateString) return "Récemment";
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -84,7 +87,7 @@ function renderJobs(jobsToRender) {
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
                 <h3>Aucun emploi trouvé</h3>
-                <p>Essayez de modifier vos critères de recherche (L'API est en anglais, essayez "Developer", "Designer", etc.).</p>
+                <p>Essayez de modifier vos critères de recherche. Note : L'API est anglophone, essayez des mots-clés en anglais (ex: Developer, Design, Data).</p>
             </div>
         `;
         return;
@@ -95,9 +98,9 @@ function renderJobs(jobsToRender) {
         const card = document.createElement('div');
         card.className = `job-card animate-fade-in ${delayClass}`;
         
-        // Check if logo exists, otherwise use a placeholder icon
-        const logoHtml = job.company_logo 
-            ? `<img src="${job.company_logo}" alt="${job.company_name} logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">`
+        // Use company_logo_url based on Remotive API format
+        const logoHtml = job.company_logo_url 
+            ? `<img src="${job.company_logo_url}" alt="${job.company_name} logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">`
             : `<i class="fa-solid fa-building" style="color: var(--accent);"></i>`;
 
         // Format Job Type
@@ -167,7 +170,9 @@ searchForm.addEventListener('submit', (e) => {
 document.querySelectorAll('.tag').forEach(tag => {
     tag.addEventListener('click', () => {
         jobTitleInput.value = tag.textContent;
-        searchForm.dispatchEvent(new Event('submit'));
+        // Directly trigger fetch to avoid dispatchEvent issues
+        const titleTerm = jobTitleInput.value.trim();
+        fetchJobs(titleTerm);
     });
 });
 
