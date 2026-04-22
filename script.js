@@ -1,78 +1,79 @@
-// Mock Data for Jobs
-const jobs = [
-    {
-        id: 1,
-        title: "Développeur Frontend React",
-        company: "TechGlobal",
-        location: "Paris, France (Hybride)",
-        type: "Temps plein",
-        salary: "55k€ - 70k€",
-        postedAt: "Il y a 2h",
-        logoColor: "#4cc9f0",
-        icon: "fa-react"
-    },
-    {
-        id: 2,
-        title: "Senior UI/UX Designer",
-        company: "CreativeStudio",
-        location: "Remote",
-        type: "Freelance",
-        salary: "400€ - 600€ / jour",
-        postedAt: "Il y a 5h",
-        logoColor: "#f72585",
-        icon: "fa-figma"
-    },
-    {
-        id: 3,
-        title: "Ingénieur Machine Learning",
-        company: "AI Solutions",
-        location: "Montréal, Canada",
-        type: "Temps plein",
-        salary: "$90k - $130k",
-        postedAt: "Hier",
-        logoColor: "#4361ee",
-        icon: "fa-brain"
-    },
-    {
-        id: 4,
-        title: "Développeur Backend Node.js",
-        company: "FinTech App",
-        location: "Londres, UK",
-        type: "Temps plein",
-        salary: "£60k - £85k",
-        postedAt: "Hier",
-        logoColor: "#3f37c9",
-        icon: "fa-node-js"
-    },
-    {
-        id: 5,
-        title: "Chef de Projet Digital",
-        company: "Agence Web Nova",
-        location: "Genève, Suisse",
-        type: "CDI",
-        salary: "80k CHF - 110k CHF",
-        postedAt: "Il y a 2 jours",
-        logoColor: "#7209b7",
-        icon: "fa-list-check"
-    },
-    {
-        id: 6,
-        title: "Data Analyst",
-        company: "Data Corp",
-        location: "Remote (Europe)",
-        type: "Temps plein",
-        salary: "45k€ - 60k€",
-        postedAt: "Il y a 3 jours",
-        logoColor: "#4cc9f0",
-        icon: "fa-chart-pie"
-    }
-];
-
 // DOM Elements
 const jobsContainer = document.getElementById('jobs-container');
 const searchForm = document.getElementById('search-form');
 const jobTitleInput = document.getElementById('job-title');
-const jobLocationInput = document.getElementById('job-location');
+const jobLocationInput = document.getElementById('job-location'); // Not directly supported by Remotive API search query, but we can filter client-side
+const loader = document.getElementById('loader');
+
+// State
+let allFetchedJobs = [];
+
+// Fetch Jobs from Remotive API
+async function fetchJobs(searchTerm = '') {
+    // Show loading state
+    jobsContainer.innerHTML = '';
+    loader.classList.remove('hidden');
+    jobsContainer.style.opacity = '0.5';
+
+    try {
+        let url = 'https://remotive.com/api/remote-jobs';
+        if (searchTerm) {
+            url += `?search=${encodeURIComponent(searchTerm)}`;
+        } else {
+            // Limit to Software Development category for initial load to be faster and relevant
+            url += '?category=software-dev&limit=20';
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        allFetchedJobs = data.jobs || [];
+        
+        // If we only wanted 20 for initial load but the API doesn't support limit perfectly, we slice it
+        if (!searchTerm) {
+            allFetchedJobs = allFetchedJobs.slice(0, 20);
+        }
+
+        // Apply secondary local filter for location if user typed something
+        const locationTerm = jobLocationInput.value.toLowerCase().trim();
+        let filteredJobs = allFetchedJobs;
+        
+        if (locationTerm) {
+            filteredJobs = allFetchedJobs.filter(job => 
+                (job.candidate_required_location && job.candidate_required_location.toLowerCase().includes(locationTerm)) ||
+                (job.company_name && job.company_name.toLowerCase().includes(locationTerm))
+            );
+        }
+
+        renderJobs(filteredJobs);
+    } catch (error) {
+        console.error('Error fetching jobs:', error);
+        jobsContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ff6b6b;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3>Erreur de connexion</h3>
+                <p>Impossible de récupérer les offres d'emploi pour le moment. Veuillez réessayer plus tard.</p>
+            </div>
+        `;
+    } finally {
+        loader.classList.add('hidden');
+        jobsContainer.style.opacity = '1';
+    }
+}
+
+// Format Date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    if (diffDays === 1) return "Aujourd'hui";
+    if (diffDays === 2) return "Hier";
+    if (diffDays < 30) return `Il y a ${diffDays} jours`;
+    
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 // Render Job Cards
 function renderJobs(jobsToRender) {
@@ -83,7 +84,7 @@ function renderJobs(jobsToRender) {
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
                 <h3>Aucun emploi trouvé</h3>
-                <p>Essayez de modifier vos critères de recherche.</p>
+                <p>Essayez de modifier vos critères de recherche (L'API est en anglais, essayez "Developer", "Designer", etc.).</p>
             </div>
         `;
         return;
@@ -94,32 +95,38 @@ function renderJobs(jobsToRender) {
         const card = document.createElement('div');
         card.className = `job-card animate-fade-in ${delayClass}`;
         
-        // Handling font-awesome icons for mock logos
-        const iconClass = job.icon.startsWith('fa-') && job.icon !== 'fa-list-check' && job.icon !== 'fa-brain' && job.icon !== 'fa-chart-pie' 
-            ? `fa-brands ${job.icon}` 
-            : `fa-solid ${job.icon}`;
+        // Check if logo exists, otherwise use a placeholder icon
+        const logoHtml = job.company_logo 
+            ? `<img src="${job.company_logo}" alt="${job.company_name} logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">`
+            : `<i class="fa-solid fa-building" style="color: var(--accent);"></i>`;
+
+        // Format Job Type
+        const jobType = job.job_type ? job.job_type.replace('_', ' ') : 'Remote';
+        
+        // Format Salary
+        const salary = job.salary ? job.salary : 'Non spécifié';
 
         card.innerHTML = `
             <div class="job-header">
-                <div class="company-logo" style="color: ${job.logoColor}; background: rgba(255,255,255,0.05);">
-                    <i class="${iconClass}"></i>
+                <div class="company-logo" style="background: white;">
+                    ${logoHtml}
                 </div>
-                <span class="job-type">${job.type}</span>
+                <span class="job-type" style="text-transform: capitalize;">${jobType}</span>
             </div>
             
             <div class="job-info">
                 <h3>${job.title}</h3>
-                <span class="company-name">${job.company}</span>
+                <span class="company-name">${job.company_name}</span>
             </div>
             
             <div class="job-meta">
-                <span><i class="fa-solid fa-location-dot"></i> ${job.location}</span>
-                <span><i class="fa-regular fa-clock"></i> ${job.postedAt}</span>
+                <span><i class="fa-solid fa-location-dot"></i> ${job.candidate_required_location || 'Worldwide'}</span>
+                <span><i class="fa-regular fa-clock"></i> ${formatDate(job.publication_date)}</span>
             </div>
             
             <div class="job-footer">
-                <span class="salary">${job.salary}</span>
-                <a href="#" class="btn btn-apply">Postuler</a>
+                <span class="salary" style="font-size: 0.95rem; font-weight: 600;">${salary}</span>
+                <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="btn btn-apply">Voir l'offre</a>
             </div>
         `;
         
@@ -127,9 +134,9 @@ function renderJobs(jobsToRender) {
     });
 }
 
-// Initial render
+// Initial render - Fetch jobs on load
 document.addEventListener('DOMContentLoaded', () => {
-    renderJobs(jobs);
+    fetchJobs(''); // Fetch default jobs
     
     // Add intersection observer for scroll animations
     const observer = new IntersectionObserver((entries) => {
@@ -152,23 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Search functionality
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    
-    const titleTerm = jobTitleInput.value.toLowerCase();
-    const locationTerm = jobLocationInput.value.toLowerCase();
-    
-    // Show a loading effect
-    jobsContainer.style.opacity = '0.5';
-    
-    setTimeout(() => {
-        const filteredJobs = jobs.filter(job => {
-            const matchTitle = job.title.toLowerCase().includes(titleTerm) || job.company.toLowerCase().includes(titleTerm);
-            const matchLocation = job.location.toLowerCase().includes(locationTerm);
-            return matchTitle && matchLocation;
-        });
-        
-        renderJobs(filteredJobs);
-        jobsContainer.style.opacity = '1';
-    }, 500); // simulate network request
+    const titleTerm = jobTitleInput.value.trim();
+    fetchJobs(titleTerm);
 });
 
 // Tags clicking functionality
