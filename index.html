@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalJob - Trouvez l'emploi de vos rêves</title>
+    <meta name="description" content="Plateforme premium de recherche d'emplois à l'échelle globale. Découvrez les meilleures opportunités de carrière.">
+    
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-globe"></i>
+                <span>GlobalJob</span>
+            </a>
+            <nav class="nav-links">
+                <a href="#" class="active">Accueil</a>
+                <a href="#">Offres d'emploi</a>
+                <a href="#">Entreprises</a>
+                <a href="#">Salaires</a>
+            </nav>
+            <div class="nav-actions">
+                <a href="#" class="btn btn-outline">Se connecter</a>
+                <a href="#" class="btn btn-primary">Créer un compte</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Trouvez l'emploi qui <span>vous correspond</span> partout dans le monde.</h1>
+                    <p class="hero-subtitle">Plus de 10 000 entreprises recrutent des talents internationaux. Ne laissez pas passer votre chance.</p>
+                    
+                    <div class="search-container">
+                        <form id="search-form" class="search-bar">
+                            <div class="input-group">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="job-title" placeholder="Titre du poste, mots-clés ou entreprise..." autocomplete="off">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="input-group">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <input type="text" id="job-location" placeholder="Ville, pays ou Télétravail" autocomplete="off">
+                            </div>
+                            <button type="submit" class="btn btn-search">Rechercher</button>
+                        </form>
+                    </div>
+                    
+                    <div class="popular-searches">
+                        <span>Recherches populaires :</span>
+                        <div class="tags">
+                            <span class="tag">Développeur Frontend</span>
+                            <span class="tag">Data Scientist</span>
+                            <span class="tag">Designer UI/UX</span>
+                            <span class="tag">Chef de Projet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="jobs-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Opportunités <span>Récentes</span></h2>
+                    <a href="#" class="view-all">Voir tout <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+                
+                <div class="jobs-grid" id="jobs-container">
+                    <!-- Job cards will be injected here by JS -->
+                </div>
+                
+                <div id="loader" class="loader hidden">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-card">
+                    <div class="cta-content">
+                        <h2>Prêt à propulser votre carrière ?</h2>
+                        <p>Créez votre profil en 2 minutes et laissez les recruteurs venir à vous.</p>
+                        <a href="#" class="btn btn-primary btn-large">Commencer maintenant</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>GlobalJob</span>
+                </a>
+                <p>La plateforme premium pour connecter les talents du monde entier avec les meilleures opportunités.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <div class="link-group">
+                    <h3>Candidats</h3>
+                    <a href="#">Recherche d'emploi</a>
+                    <a href="#">Créer un CV</a>
+                    <a href="#">Alertes emploi</a>
+                </div>
+                <div class="link-group">
+                    <h3>Entreprises</h3>
+                    <a href="#">Publier une offre</a>
+                    <a href="#">Rechercher des profils</a>
+                    <a href="#">Tarifs</a>
+                </div>
+                <div class="link-group">
+                    <h3>GlobalJob</h3>
+                    <a href="#">À propos</a>
+                    <a href="#">Contact</a>
+                    <a href="#">Confidentialité</a>
+                </div>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 GlobalJob. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
