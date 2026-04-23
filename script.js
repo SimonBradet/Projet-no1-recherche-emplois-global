@@ -108,7 +108,9 @@ async function fetchJobs(searchTerm = '') {
             allFetchedJobs = data.jobs || [];
             
             let filteredJobs = allFetchedJobs;
-            if (locationValue) {
+            
+            // Ignore the default prototype location when using the global API
+            if (locationValue && locationValue !== 'québec, qc (rayon 50 km)') {
                 filteredJobs = allFetchedJobs.filter(job => 
                     (job.candidate_required_location && job.candidate_required_location.toLowerCase().includes(locationValue)) ||
                     (job.company_name && job.company_name.toLowerCase().includes(locationValue))
