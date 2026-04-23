@@ -6,6 +6,7 @@ const localDatabase = [
         company_name: "Québec Cloud Solutions",
         candidate_required_location: "Québec, QC",
         work_mode: "Hybride",
+        source: "LinkedIn",
         job_type: "Temps plein",
         publication_date: new Date().toISOString(),
         salary: "110k$ - 140k$",
@@ -18,6 +19,7 @@ const localDatabase = [
         company_name: "CyberDefensio",
         candidate_required_location: "Lévis, QC",
         work_mode: "Présentiel",
+        source: "Indeed",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 86400000).toISOString(),
         salary: "95k$ - 130k$",
@@ -30,6 +32,7 @@ const localDatabase = [
         company_name: "Ministère des Technologies",
         candidate_required_location: "Québec, QC",
         work_mode: "Présentiel",
+        source: "Emploi-Québec",
         job_type: "Contrat",
         publication_date: new Date(Date.now() - 172800000).toISOString(),
         salary: "45$/h - 65$/h",
@@ -43,6 +46,7 @@ const localDatabase = [
         company_name: "Montréal Tech Hub",
         candidate_required_location: "Montréal, QC",
         work_mode: "Hybride",
+        source: "LinkedIn",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 40000000).toISOString(),
         salary: "85k$ - 110k$",
@@ -55,6 +59,7 @@ const localDatabase = [
         company_name: "FinTech MTL",
         candidate_required_location: "Montréal, QC",
         work_mode: "Hybride",
+        source: "Glassdoor",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 90000000).toISOString(),
         salary: "90k$ - 120k$",
@@ -68,6 +73,7 @@ const localDatabase = [
         company_name: "Toronto Cloud Inc.",
         candidate_required_location: "Toronto, ON",
         work_mode: "À distance",
+        source: "GlobalTech Jobs",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 50000000).toISOString(),
         salary: "100k$ - 130k$",
@@ -271,8 +277,9 @@ function renderJobs(jobsToRender) {
         const jobType = job.job_type ? job.job_type.replace('_', ' ') : 'Non spécifié';
         const salary = job.salary ? job.salary : 'Salaire compétitif';
         
-        const isLocal = !job.id; // Mock data
-        const badgeHtml = isLocal ? `<span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 10px; font-weight: bold;">LOCAL</span>` : '';
+        // SPRINT 6: Ajout de la source de l'offre
+        const sourceName = job.source || "Remotive.com";
+        const sourceHtml = `<span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: auto;"><i class="fa-solid fa-share-nodes"></i> ${sourceName}</span>`;
 
         // Mode de travail logic (Sprint 5)
         const workMode = job.work_mode || "À distance"; // Les offres Remotive sont toujours à distance
@@ -281,11 +288,12 @@ function renderJobs(jobsToRender) {
         if (workMode.toLowerCase() === "présentiel") workModeIcon = "fa-building";
 
         card.innerHTML = `
-            <div class="job-header">
+            <div class="job-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                 <div class="company-logo" style="background: white; display:flex; align-items:center; justify-content:center;">
                     ${logoHtml}
                 </div>
-                <span class="job-type" style="text-transform: capitalize;">${jobType} ${badgeHtml}</span>
+                <span class="job-type" style="text-transform: capitalize;">${jobType}</span>
+                ${sourceHtml}
             </div>
             
             <div class="job-info">
