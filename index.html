@@ -56,7 +56,14 @@
                             <div class="divider"></div>
                             <div class="input-group">
                                 <i class="fa-solid fa-location-dot"></i>
-                                <input type="text" id="job-location" value="Québec, QC (Rayon 50 km)" placeholder="Ville, pays ou Télétravail" autocomplete="off">
+                                <input type="text" id="job-location" value="Québec, QC" placeholder="Ville, pays ou Télétravail" autocomplete="off">
+                                <select id="job-radius" style="border:none; background:transparent; outline:none; color:var(--text); cursor:pointer; padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.1); margin-right: 10px; font-family: inherit;">
+                                    <option value="10" style="color: black;">+ 10 km</option>
+                                    <option value="25" style="color: black;">+ 25 km</option>
+                                    <option value="50" selected style="color: black;">+ 50 km</option>
+                                    <option value="100" style="color: black;">+ 100 km</option>
+                                    <option value="0" style="color: black;">Partout</option>
+                                </select>
                             </div>
                             <button type="submit" class="btn btn-search">Rechercher</button>
                         </form>

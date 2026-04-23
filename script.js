@@ -8,7 +8,8 @@ const quebecMockJobs = [
         publication_date: new Date().toISOString(),
         salary: "110k$ - 140k$",
         url: "#",
-        company_logo_url: ""
+        company_logo_url: "",
+        description: "<h3>Description du poste</h3><p>Nous recherchons un Architecte Datacenter Senior pour concevoir, déployer et maintenir des infrastructures résilientes et hautement disponibles pour nos clients gouvernementaux et corporatifs au Québec.</p><h4>Responsabilités</h4><ul><li>Concevoir des architectures réseau et serveur haute disponibilité.</li><li>Gérer les migrations de données critiques vers des environnements de cloud hybride.</li><li>Assurer la continuité des affaires et les plans de reprise après sinistre.</li></ul><h4>Exigences</h4><ul><li>10+ années d'expérience en infrastructure TI.</li><li>Certifications Cisco, VMware ou équivalentes.</li><li>Bilinguisme (Français/Anglais).</li></ul>"
     },
     {
         title: "Spécialiste Sécurité & Lutte Anti-Rançongiciel",
@@ -18,7 +19,8 @@ const quebecMockJobs = [
         publication_date: new Date(Date.now() - 86400000).toISOString(),
         salary: "95k$ - 130k$",
         url: "#",
-        company_logo_url: ""
+        company_logo_url: "",
+        description: "<h3>Description du poste</h3><p>En tant que spécialiste de la cybersécurité, vous ferez partie de notre équipe d'intervention rapide (Blue Team) spécialisée dans la détection, la prévention et la remédiation des attaques par rançongiciel.</p><h4>Responsabilités</h4><ul><li>Monitorer les alertes SIEM et analyser les menaces avancées.</li><li>Intervenir lors d'incidents critiques (Ransomware) chez nos clients.</li><li>Mettre en place des stratégies de sauvegarde inaltérables.</li></ul><h4>Exigences</h4><ul><li>Expérience pratique en réponse aux incidents.</li><li>Certification CISSP ou CEH souhaitée.</li></ul>"
     },
     {
         title: "Analyste de Relève TI",
@@ -28,7 +30,8 @@ const quebecMockJobs = [
         publication_date: new Date(Date.now() - 172800000).toISOString(),
         salary: "45$/h - 65$/h",
         url: "#",
-        company_logo_url: ""
+        company_logo_url: "",
+        description: "<h3>Description du poste</h3><p>Poste contractuel pour appuyer les équipes d'infrastructure en tant que relève durant les périodes de transition technologique. Vous participerez au maintien en condition opérationnelle des systèmes critiques du gouvernement.</p><h4>Responsabilités</h4><ul><li>Soutenir les opérations journalières du centre de données.</li><li>Documenter les processus d'escalade.</li><li>Participer aux tests de relève (DRP).</li></ul>"
     },
     {
         title: "Ingénieur Infrastructure (Datacenter)",
@@ -38,7 +41,8 @@ const quebecMockJobs = [
         publication_date: new Date(Date.now() - 345600000).toISOString(),
         salary: "90k$ - 115k$",
         url: "#",
-        company_logo_url: ""
+        company_logo_url: "",
+        description: "<h3>Description du poste</h3><p>Rejoignez notre équipe dynamique pour opérer l'un des centres de données les plus verts d'Amérique du Nord. Vous travaillerez sur l'automatisation de nos processus de déploiement physique et virtuel.</p><h4>Responsabilités</h4><ul><li>Gérer les baies de stockage (SAN/NAS).</li><li>Automatiser avec Ansible et Terraform.</li><li>Maintenir l'environnement de virtualisation VMware.</li></ul>"
     },
     {
         title: "Architecte Sécurité et Réseaux",
@@ -48,7 +52,8 @@ const quebecMockJobs = [
         publication_date: new Date(Date.now() - 518400000).toISOString(),
         salary: "105k$ - 135k$",
         url: "#",
-        company_logo_url: ""
+        company_logo_url: "",
+        description: "<h3>Description du poste</h3><p>Optima Conseils recherche un architecte spécialisé dans la conception de réseaux ultra-sécurisés pour le secteur financier.</p><h4>Exigences</h4><ul><li>Maîtrise des concepts Zero Trust.</li><li>Expérience avec les pare-feux de nouvelle génération (Palo Alto, Fortinet).</li><li>Excellentes capacités de communication.</li></ul>"
     }
 ];
 
@@ -57,6 +62,7 @@ const jobsContainer = document.getElementById('jobs-container');
 const searchForm = document.getElementById('search-form');
 const jobTitleInput = document.getElementById('job-title');
 const jobLocationInput = document.getElementById('job-location');
+const jobRadiusInput = document.getElementById('job-radius');
 const loader = document.getElementById('loader');
 
 // State
@@ -66,6 +72,7 @@ let allFetchedJobs = [];
 async function fetchJobs(searchTerm = '') {
     const titleValue = jobTitleInput.value.toLowerCase();
     const locationValue = jobLocationInput.value.toLowerCase();
+    const radiusValue = jobRadiusInput.value;
     
     // Intercept default custom search for the Quebec prototype
     const isQuebecSearch = 
@@ -83,12 +90,15 @@ async function fetchJobs(searchTerm = '') {
             // Simulate network delay for realism
             await new Promise(resolve => setTimeout(resolve, 800));
             
-            // If user typed specific things, filter the mock data slightly, else show all
             let filteredMock = quebecMockJobs;
             if (titleValue && !titleValue.includes('datacenter, architecture')) {
                 filteredMock = quebecMockJobs.filter(job => job.title.toLowerCase().includes(titleValue));
             }
-            renderJobs(filteredMock);
+            
+            // We could use radiusValue here to filter technically, but since it's mock data we'll just show them
+            
+            allFetchedJobs = filteredMock;
+            renderJobs(allFetchedJobs);
             
         } else {
             // 2. USE REAL API FOR OTHER SEARCHES
@@ -109,8 +119,8 @@ async function fetchJobs(searchTerm = '') {
             
             let filteredJobs = allFetchedJobs;
             
-            // Ignore the default prototype location when using the global API
-            if (locationValue && locationValue !== 'québec, qc (rayon 50 km)') {
+            // Ignore the default prototype location 'québec, qc' when using the global API
+            if (locationValue && locationValue !== 'québec, qc') {
                 filteredJobs = allFetchedJobs.filter(job => 
                     (job.candidate_required_location && job.candidate_required_location.toLowerCase().includes(locationValue)) ||
                     (job.company_name && job.company_name.toLowerCase().includes(locationValue))
@@ -118,6 +128,9 @@ async function fetchJobs(searchTerm = '') {
             }
 
             filteredJobs = filteredJobs.slice(0, 30);
+            
+            // Update global state with exactly what is rendered so the index matches
+            allFetchedJobs = filteredJobs;
             renderJobs(filteredJobs);
         }
     } catch (error) {
@@ -149,6 +162,16 @@ function formatDate(dateString) {
     
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+// Job detail navigation
+window.viewJobDetails = function(index) {
+    const job = allFetchedJobs[index];
+    if (job) {
+        // Save the job data to localStorage so the new tab can read it
+        localStorage.setItem('selectedJob', JSON.stringify(job));
+        window.open('details.html', '_blank');
+    }
+};
 
 // Render Job Cards
 function renderJobs(jobsToRender) {
@@ -197,7 +220,7 @@ function renderJobs(jobsToRender) {
             
             <div class="job-footer">
                 <span class="salary" style="font-size: 0.95rem; font-weight: 600;">${salary}</span>
-                <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="btn btn-apply">Voir l'offre</a>
+                <button onclick="viewJobDetails(${index})" class="btn btn-apply">Voir l'offre</button>
             </div>
         `;
         
@@ -207,7 +230,6 @@ function renderJobs(jobsToRender) {
 
 // Initial render - Fetch jobs on load
 document.addEventListener('DOMContentLoaded', () => {
-    // Will trigger the interceptor for Quebec automatically because of default HTML values
     fetchJobs(); 
     
     const observer = new IntersectionObserver((entries) => {

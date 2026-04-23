@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails de l'offre - GlobalTech Jobs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .details-container {
+            max-width: 800px;
+            margin: 120px auto 60px;
+            padding: 40px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .header-logo i {
+            font-size: 2.5rem;
+            color: var(--accent);
+        }
+        .job-title-large {
+            font-size: 2rem;
+            color: var(--text);
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        .company-name-large {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+        .meta-badges {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .meta-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .description-content {
+            line-height: 1.8;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 1.05rem;
+        }
+        .description-content h1, .description-content h2, .description-content h3, .description-content h4 {
+            color: var(--text);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .description-content ul, .description-content ol {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        .description-content li {
+            margin-bottom: 10px;
+        }
+        .description-content a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .apply-section {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-large {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+        }
+        @media (max-width: 768px) {
+            .header-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            .job-title-large {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo" style="cursor: pointer;" onclick="window.location.href='index.html'">
+            <i class="fa-solid fa-earth-americas"></i>
+            GlobalTech Jobs
+        </div>
+        <a href="index.html" class="btn btn-outline" style="text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Retour à la recherche</a>
+    </nav>
+
+    <div class="container">
+        <div id="details-content" class="details-container">
+            <div style="text-align: center; padding: 50px;">
+                <div class="loader" style="display: flex;">
+                    <div class="spinner"></div>
+                </div>
+                <p style="margin-top: 20px;">Chargement des détails de l'offre...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const detailsContent = document.getElementById('details-content');
+            
+            try {
+                // Get job from localStorage
+                const jobData = localStorage.getItem('selectedJob');
+                if (!jobData) {
+                    throw new Error("Aucune offre sélectionnée");
+                }
+                
+                const job = JSON.parse(jobData);
+                
+                const logoHtml = job.company_logo_url 
+                    ? `<img src="${job.company_logo_url}" alt="${job.company_name} logo">`
+                    : `<i class="fa-solid fa-building"></i>`;
+                    
+                const jobType = job.job_type ? job.job_type.replace('_', ' ') : 'Non spécifié';
+                const salary = job.salary ? job.salary : 'Salaire compétitif';
+                const description = job.description || "<p>Aucune description détaillée n'est disponible pour cette offre.</p>";
+                
+                // Format Date
+                let dateStr = "Récemment";
+                if (job.publication_date) {
+                    const date = new Date(job.publication_date);
+                    dateStr = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                }
+
+                detailsContent.innerHTML = `
+                    <div class="header-info">
+                        <div class="header-logo">
+                            ${logoHtml}
+                        </div>
+                        <div>
+                            <h1 class="job-title-large">${job.title}</h1>
+                            <div class="company-name-large">${job.company_name}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-badges">
+                        <div class="meta-badge"><i class="fa-solid fa-location-dot"></i> ${job.candidate_required_location || 'Worldwide'}</div>
+                        <div class="meta-badge"><i class="fa-solid fa-briefcase"></i> <span style="text-transform: capitalize;">${jobType}</span></div>
+                        <div class="meta-badge"><i class="fa-solid fa-money-bill-wave"></i> ${salary}</div>
+                        <div class="meta-badge"><i class="fa-regular fa-clock"></i> Publié le ${dateStr}</div>
+                    </div>
+                    
+                    <div class="description-content">
+                        ${description}
+                    </div>
+                    
+                    <div class="apply-section">
+                        <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="btn btn-apply btn-large">Postuler sur le site de l'entreprise</a>
+                    </div>
+                `;
+                
+                // Update page title
+                document.title = `${job.title} chez ${job.company_name} - GlobalTech Jobs`;
+                
+            } catch (e) {
+                console.error(e);
+                detailsContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ff6b6b;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                        <h2>Offre introuvable</h2>
+                        <p>Les détails de cette offre n'ont pas pu être chargés ou l'offre a expiré. Veuillez retourner à la page de recherche.</p>
+                        <a href="index.html" class="btn btn-outline" style="margin-top: 20px; display: inline-block; text-decoration: none;">Retour à la recherche</a>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
