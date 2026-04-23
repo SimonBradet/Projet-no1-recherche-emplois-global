@@ -1,5 +1,6 @@
-// Custom Mock Data for Quebec specific search
-const quebecMockJobs = [
+// Base de données locale étendue (Option C)
+const localDatabase = [
+    // --- QUÉBEC ---
     {
         title: "Architecte Datacenter Senior",
         company_name: "Québec Cloud Solutions",
@@ -33,29 +34,90 @@ const quebecMockJobs = [
         company_logo_url: "",
         description: "<h3>Description du poste</h3><p>Poste contractuel pour appuyer les équipes d'infrastructure en tant que relève durant les périodes de transition technologique. Vous participerez au maintien en condition opérationnelle des systèmes critiques du gouvernement.</p><h4>Responsabilités</h4><ul><li>Soutenir les opérations journalières du centre de données.</li><li>Documenter les processus d'escalade.</li><li>Participer aux tests de relève (DRP).</li></ul>"
     },
+    // --- MONTRÉAL ---
     {
-        title: "Ingénieur Infrastructure (Datacenter)",
-        company_name: "Nordia Tech",
-        candidate_required_location: "Sainte-Foy, QC",
+        title: "Développeur Fullstack React/Node",
+        company_name: "Montréal Tech Hub",
+        candidate_required_location: "Montréal, QC (Hybride)",
         job_type: "Temps plein",
-        publication_date: new Date(Date.now() - 345600000).toISOString(),
-        salary: "90k$ - 115k$",
+        publication_date: new Date(Date.now() - 40000000).toISOString(),
+        salary: "85k$ - 110k$",
         url: "#",
         company_logo_url: "",
-        description: "<h3>Description du poste</h3><p>Rejoignez notre équipe dynamique pour opérer l'un des centres de données les plus verts d'Amérique du Nord. Vous travaillerez sur l'automatisation de nos processus de déploiement physique et virtuel.</p><h4>Responsabilités</h4><ul><li>Gérer les baies de stockage (SAN/NAS).</li><li>Automatiser avec Ansible et Terraform.</li><li>Maintenir l'environnement de virtualisation VMware.</li></ul>"
+        description: "<h3>Description</h3><p>Rejoignez notre équipe montréalaise dynamique pour construire des applications web modernes pour nos clients internationaux.</p><h4>Responsabilités</h4><ul><li>Développer des interfaces utilisateur avec React.</li><li>Créer des API REST avec Node.js et Express.</li></ul>"
     },
     {
-        title: "Architecte Sécurité et Réseaux",
-        company_name: "Optima Conseils",
-        candidate_required_location: "Québec, QC (Télétravail autorisé)",
+        title: "Ingénieur de Données (Data Engineer)",
+        company_name: "FinTech MTL",
+        candidate_required_location: "Montréal, QC",
         job_type: "Temps plein",
-        publication_date: new Date(Date.now() - 518400000).toISOString(),
-        salary: "105k$ - 135k$",
+        publication_date: new Date(Date.now() - 90000000).toISOString(),
+        salary: "90k$ - 120k$",
         url: "#",
         company_logo_url: "",
-        description: "<h3>Description du poste</h3><p>Optima Conseils recherche un architecte spécialisé dans la conception de réseaux ultra-sécurisés pour le secteur financier.</p><h4>Exigences</h4><ul><li>Maîtrise des concepts Zero Trust.</li><li>Expérience avec les pare-feux de nouvelle génération (Palo Alto, Fortinet).</li><li>Excellentes capacités de communication.</li></ul>"
+        description: "<h3>Description</h3><p>En tant qu'Ingénieur de données, vous construirez les pipelines de données alimentant nos modèles d'intelligence artificielle financiers.</p><h4>Exigences</h4><ul><li>Maitrise de Python et SQL.</li><li>Expérience avec AWS ou GCP.</li></ul>"
+    },
+    // --- TORONTO ---
+    {
+        title: "DevOps Cloud Engineer",
+        company_name: "Toronto Cloud Inc.",
+        candidate_required_location: "Toronto, ON (Remote)",
+        job_type: "Temps plein",
+        publication_date: new Date(Date.now() - 50000000).toISOString(),
+        salary: "100k$ - 130k$",
+        url: "#",
+        company_logo_url: "",
+        description: "<h3>Description</h3><p>Manage Kubernetes clusters and automate deployments across multiple cloud providers.</p>"
     }
 ];
+
+// Dictionnaire de traduction (Option B)
+const keywordMap = {
+    'développeur': 'developer',
+    'developpeur': 'developer',
+    'concepteur': 'designer',
+    'réseau': 'network',
+    'reseau': 'network',
+    'données': 'data',
+    'donnees': 'data',
+    'logiciel': 'software',
+    'sécurité': 'security',
+    'securite': 'security',
+    'rançongiciel': 'security',
+    'architecture': 'architecture',
+    'relève': 'support',
+    'releve': 'support'
+};
+
+function translateKeyword(term) {
+    let translated = term.toLowerCase();
+    for (const [fr, en] of Object.entries(keywordMap)) {
+        if (translated.includes(fr)) {
+            translated = translated.replace(new RegExp(fr, 'g'), en);
+        }
+    }
+    return translated;
+}
+
+// Validation de localisation intelligente
+function isLocationMatch(jobLocation, searchLocation) {
+    if (!searchLocation) return true;
+    const jl = (jobLocation || '').toLowerCase();
+    const sl = searchLocation.toLowerCase();
+    
+    // Match direct
+    if (jl.includes(sl) || sl.includes(jl)) return true;
+    
+    // Règle spéciale : Les offres "Worldwide" ou "Americas" de l'API sont valides pour toute ville canadienne
+    const isCanadianSearch = sl.includes('montréal') || sl.includes('montreal') || sl.includes('québec') || sl.includes('quebec') || sl.includes('toronto') || sl.includes('canada');
+    if (isCanadianSearch) {
+        if (jl.includes('worldwide') || jl.includes('americas') || jl.includes('canada') || jl.includes('anywhere')) {
+            return true;
+        }
+    }
+    
+    return false;
+}
 
 // DOM Elements
 const jobsContainer = document.getElementById('jobs-container');
@@ -68,16 +130,15 @@ const loader = document.getElementById('loader');
 // State
 let allFetchedJobs = [];
 
-// Fetch Jobs from Remotive API or Mock if Quebec specific
+// Fonction de recherche principale (Hybride avancée)
 async function fetchJobs(searchTerm = '') {
-    const titleValue = jobTitleInput.value.toLowerCase();
-    const locationValue = jobLocationInput.value.toLowerCase();
-    const radiusValue = jobRadiusInput.value;
+    const titleValue = jobTitleInput.value.toLowerCase().trim();
+    const locationValue = jobLocationInput.value.toLowerCase().trim();
+    // Le radius pourrait être utilisé ici pour des API géospatiales, on le récupère pour le principe
+    const radiusValue = jobRadiusInput ? jobRadiusInput.value : "50";
     
-    // Intercept default custom search for the Quebec prototype
-    const isQuebecSearch = 
-        (titleValue.includes('datacenter') || titleValue.includes('architecture') || titleValue.includes('relève') || titleValue.includes('rançongiciel') || titleValue === '') && 
-        (locationValue.includes('québec') || locationValue.includes('quebec'));
+    // 1. Traduire les termes français pour l'API anglaise
+    const apiSearchTerm = translateKeyword(titleValue);
 
     // Show loading state
     jobsContainer.innerHTML = '';
@@ -85,54 +146,49 @@ async function fetchJobs(searchTerm = '') {
     jobsContainer.style.opacity = '0.5';
 
     try {
-        if (isQuebecSearch) {
-            // 1. USE CUSTOM MOCK DATA FOR THE DEFAULT QUEBEC DEMO
-            // Simulate network delay for realism
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            let filteredMock = quebecMockJobs;
-            if (titleValue && !titleValue.includes('datacenter, architecture')) {
-                filteredMock = quebecMockJobs.filter(job => job.title.toLowerCase().includes(titleValue));
-            }
-            
-            // We could use radiusValue here to filter technically, but since it's mock data we'll just show them
-            
-            allFetchedJobs = filteredMock;
-            renderJobs(allFetchedJobs);
-            
-        } else {
-            // 2. USE REAL API FOR OTHER SEARCHES
-            let url = 'https://remotive.com/api/remote-jobs';
-            if (searchTerm) {
-                url += `?search=${encodeURIComponent(searchTerm)}`;
-            } else {
-                url += '?category=software-dev&limit=30';
-            }
+        let finalResults = [];
 
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Erreur réseau: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            allFetchedJobs = data.jobs || [];
-            
-            let filteredJobs = allFetchedJobs;
-            
-            // Ignore the default prototype location 'québec, qc' when using the global API
-            if (locationValue && locationValue !== 'québec, qc') {
-                filteredJobs = allFetchedJobs.filter(job => 
-                    (job.candidate_required_location && job.candidate_required_location.toLowerCase().includes(locationValue)) ||
-                    (job.company_name && job.company_name.toLowerCase().includes(locationValue))
-                );
-            }
-
-            filteredJobs = filteredJobs.slice(0, 30);
-            
-            // Update global state with exactly what is rendered so the index matches
-            allFetchedJobs = filteredJobs;
-            renderJobs(filteredJobs);
+        // ÉTAPE 1 : Chercher dans notre base de données locale (Montréal, Québec, Toronto, etc.)
+        let localResults = localDatabase;
+        if (titleValue) {
+            localResults = localResults.filter(job => job.title.toLowerCase().includes(titleValue) || job.description.toLowerCase().includes(titleValue));
         }
+        if (locationValue) {
+            localResults = localResults.filter(job => isLocationMatch(job.candidate_required_location, locationValue));
+        }
+        
+        finalResults = [...localResults];
+
+        // ÉTAPE 2 : Chercher sur l'API Internationale avec le terme traduit
+        let url = 'https://remotive.com/api/remote-jobs';
+        if (apiSearchTerm) {
+            url += `?search=${encodeURIComponent(apiSearchTerm)}`;
+        } else {
+            url += '?category=software-dev&limit=30';
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.warn(`Remotive API warning: ${response.status}`);
+        } else {
+            const data = await response.json();
+            const apiJobs = data.jobs || [];
+            
+            // Filtrer les emplois de l'API selon la localisation intelligente
+            const filteredApiJobs = apiJobs.filter(job => isLocationMatch(job.candidate_required_location, locationValue));
+            
+            // Ajouter les résultats de l'API à nos résultats locaux
+            finalResults = [...finalResults, ...filteredApiJobs];
+        }
+
+        // ÉTAPE 3 : Rendu final (limité à 40 pour la performance)
+        finalResults = finalResults.slice(0, 40);
+        allFetchedJobs = finalResults;
+        
+        // Simuler un léger délai réseau pour l'effet UI
+        await new Promise(resolve => setTimeout(resolve, 500));
+        renderJobs(finalResults);
+        
     } catch (error) {
         console.error('Error fetching jobs:', error);
         jobsContainer.innerHTML = `
@@ -167,7 +223,6 @@ function formatDate(dateString) {
 window.viewJobDetails = function(index) {
     const job = allFetchedJobs[index];
     if (job) {
-        // Save the job data to localStorage so the new tab can read it
         localStorage.setItem('selectedJob', JSON.stringify(job));
         window.open('details.html', '_blank');
     }
@@ -182,7 +237,7 @@ function renderJobs(jobsToRender) {
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
                 <h3>Aucun emploi trouvé</h3>
-                <p>Essayez de modifier vos critères de recherche. Note : L'API est anglophone pour les recherches générales, essayez des mots-clés en anglais (ex: Developer, Design).</p>
+                <p>Essayez d'élargir votre localisation (ex: "Canada") ou de vérifier l'orthographe.</p>
             </div>
         `;
         return;
@@ -199,13 +254,17 @@ function renderJobs(jobsToRender) {
 
         const jobType = job.job_type ? job.job_type.replace('_', ' ') : 'Non spécifié';
         const salary = job.salary ? job.salary : 'Salaire compétitif';
+        
+        // Add a "Local" badge for mock data
+        const isLocal = !job.id; // Mock data doesn't have an ID from Remotive
+        const badgeHtml = isLocal ? `<span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 10px; font-weight: bold;">LOCAL</span>` : '';
 
         card.innerHTML = `
             <div class="job-header">
                 <div class="company-logo" style="background: white; display:flex; align-items:center; justify-content:center;">
                     ${logoHtml}
                 </div>
-                <span class="job-type" style="text-transform: capitalize;">${jobType}</span>
+                <span class="job-type" style="text-transform: capitalize;">${jobType} ${badgeHtml}</span>
             </div>
             
             <div class="job-info">
@@ -252,16 +311,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // Search functionality
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const titleTerm = jobTitleInput.value.trim();
-    fetchJobs(titleTerm);
+    fetchJobs();
 });
 
 // Tags clicking functionality
 document.querySelectorAll('.tag').forEach(tag => {
     tag.addEventListener('click', () => {
         jobTitleInput.value = tag.textContent;
-        const titleTerm = jobTitleInput.value.trim();
-        fetchJobs(titleTerm);
+        fetchJobs();
     });
 });
 
