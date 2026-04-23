@@ -83,7 +83,7 @@ const localDatabase = [
     }
 ];
 
-// Dictionnaire de traduction (Option B)
+// Dictionnaire de traduction
 const keywordMap = {
     'développeur': 'developer',
     'developpeur': 'developer',
@@ -111,28 +111,23 @@ function translateKeyword(term) {
     return translated;
 }
 
-// Validation de localisation intelligente et stricte (Sprint 5)
+// Validation de localisation intelligente et stricte
 function isLocationMatch(jobLocation, searchLocation, radiusValue) {
     if (!searchLocation) return true;
     const jl = (jobLocation || '').toLowerCase();
     const sl = searchLocation.toLowerCase();
     
-    // Match direct
     if (jl.includes(sl) || sl.includes(jl)) return true;
     
-    // Règle de rayon (Si != "0", on veut du strict local)
     const isStrictRadius = radiusValue !== "0";
     
-    // Règle spéciale : Gestion des offres de l'API (qui sont principalement Worldwide)
     const isCanadianSearch = sl.includes('montréal') || sl.includes('montreal') || sl.includes('québec') || sl.includes('quebec') || sl.includes('toronto') || sl.includes('canada');
     if (isCanadianSearch) {
         if (isStrictRadius) {
-            // SPRINT 5: Filtre Strict - Bloque les offres européennes/mondiales si une distance est exigée
             if (jl === 'canada' || jl === 'canada only' || jl.includes('quebec') || jl.includes('qc')) {
                 return true;
             }
         } else {
-            // SPRINT 5: Filtre Partout - Permet les offres Worldwide/Americas (qui incluent le Canada)
             if (jl.includes('worldwide') || jl.includes('americas') || jl.includes('canada') || jl.includes('anywhere')) {
                 return true;
             }
@@ -146,23 +141,27 @@ function isLocationMatch(jobLocation, searchLocation, radiusValue) {
 const jobsContainer = document.getElementById('jobs-container');
 const searchForm = document.getElementById('search-form');
 const jobTitleInput = document.getElementById('job-title');
+const jobCategoryInput = document.getElementById('job-category');
 const jobLocationInput = document.getElementById('job-location');
 const jobRadiusInput = document.getElementById('job-radius');
+const filterTypeInput = document.getElementById('filter-type');
+const filterModeInput = document.getElementById('filter-mode');
+const sortByInput = document.getElementById('sort-by');
 const loader = document.getElementById('loader');
 
 // State
-let allFetchedJobs = [];
+let fetchedDataArray = []; // Raw un-filtered fetched data
+let allFetchedJobs = []; // Currently displayed data
 
-// Fonction de recherche principale (Hybride avancée)
-async function fetchJobs(searchTerm = '') {
+// Fonction de recherche principale
+async function fetchJobs() {
     const titleValue = jobTitleInput.value.toLowerCase().trim();
+    const categoryValue = jobCategoryInput.value;
     const locationValue = jobLocationInput.value.toLowerCase().trim();
     const radiusValue = jobRadiusInput ? jobRadiusInput.value : "50";
     
-    // 1. Traduire les termes français pour l'API anglaise
     const apiSearchTerm = translateKeyword(titleValue);
 
-    // Show loading state
     jobsContainer.innerHTML = '';
     loader.classList.remove('hidden');
     jobsContainer.style.opacity = '0.5';
@@ -175,6 +174,15 @@ async function fetchJobs(searchTerm = '') {
         if (titleValue) {
             localResults = localResults.filter(job => job.title.toLowerCase().includes(titleValue) || job.description.toLowerCase().includes(titleValue));
         }
+        if (categoryValue && categoryValue !== 'all') {
+            localResults = localResults.filter(job => {
+                const jt = job.title.toLowerCase();
+                if (categoryValue === 'software-dev') return jt.includes('développeur') || jt.includes('developer');
+                if (categoryValue === 'data') return jt.includes('données') || jt.includes('data');
+                if (categoryValue === 'devops') return jt.includes('cloud') || jt.includes('devops') || jt.includes('architecte');
+                return true;
+            });
+        }
         if (locationValue) {
             localResults = localResults.filter(job => isLocationMatch(job.candidate_required_location, locationValue, radiusValue));
         }
@@ -183,10 +191,14 @@ async function fetchJobs(searchTerm = '') {
 
         // ÉTAPE 2 : Chercher sur l'API Internationale avec le terme traduit
         let url = 'https://remotive.com/api/remote-jobs';
-        if (apiSearchTerm) {
-            url += `?search=${encodeURIComponent(apiSearchTerm)}`;
+        let params = [];
+        if (apiSearchTerm) params.push(`search=${encodeURIComponent(apiSearchTerm)}`);
+        if (categoryValue && categoryValue !== 'all') params.push(`category=${categoryValue}`);
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         } else {
-            url += '?category=software-dev&limit=30';
+            url += '?limit=50'; // Default si vide
         }
 
         const response = await fetch(url);
@@ -199,17 +211,16 @@ async function fetchJobs(searchTerm = '') {
             // Filtrer les emplois de l'API selon la localisation intelligente et le rayon
             const filteredApiJobs = apiJobs.filter(job => isLocationMatch(job.candidate_required_location, locationValue, radiusValue));
             
-            // Ajouter les résultats de l'API à nos résultats locaux
             finalResults = [...finalResults, ...filteredApiJobs];
         }
 
-        // ÉTAPE 3 : Rendu final
-        finalResults = finalResults.slice(0, 40);
-        allFetchedJobs = finalResults;
+        fetchedDataArray = finalResults;
         
         // Simuler un léger délai réseau pour l'effet UI
         await new Promise(resolve => setTimeout(resolve, 500));
-        renderJobs(finalResults);
+        
+        // Appliquer les filtres avancés et rendre
+        applyFiltersAndRender();
         
     } catch (error) {
         console.error('Error fetching jobs:', error);
@@ -224,6 +235,43 @@ async function fetchJobs(searchTerm = '') {
         loader.classList.add('hidden');
         jobsContainer.style.opacity = '1';
     }
+}
+
+// Appliquer les filtres avancés (Options A et C)
+function applyFiltersAndRender() {
+    const typeValue = filterTypeInput.value.toLowerCase();
+    const modeValue = filterModeInput.value.toLowerCase();
+    const sortValue = sortByInput.value;
+    
+    let filtered = [...fetchedDataArray];
+    
+    // Filtre de Type
+    if (typeValue !== 'all') {
+        filtered = filtered.filter(job => {
+            const jt = (job.job_type || '').toLowerCase();
+            if (typeValue === 'temps plein') return jt.includes('full') || jt.includes('plein');
+            if (typeValue === 'contrat') return jt.includes('contract') || jt.includes('freelance') || jt.includes('partiel');
+            return true;
+        });
+    }
+    
+    // Filtre de Mode
+    if (modeValue !== 'all') {
+        filtered = filtered.filter(job => {
+            const wm = (job.work_mode || 'à distance').toLowerCase();
+            return wm === modeValue;
+        });
+    }
+    
+    // Tri
+    if (sortValue === 'date') {
+        filtered.sort((a, b) => new Date(b.publication_date || 0) - new Date(a.publication_date || 0));
+    }
+    
+    // Limiter les résultats
+    filtered = filtered.slice(0, 40);
+    allFetchedJobs = filtered;
+    renderJobs(filtered);
 }
 
 // Format Date
@@ -258,8 +306,8 @@ function renderJobs(jobsToRender) {
         jobsContainer.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                <h3>Aucun emploi trouvé dans ce rayon</h3>
-                <p>Essayez de changer le rayon de distance pour "Partout" afin d'inclure les offres en télétravail mondial.</p>
+                <h3>Aucun emploi ne correspond à ces filtres</h3>
+                <p>Essayez de relâcher les filtres avancés (Mode, Type) ou de modifier votre recherche.</p>
             </div>
         `;
         return;
@@ -338,11 +386,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Search functionality
+// Event Listeners SPRINT 7
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     fetchJobs();
 });
+
+// Changement de catégorie = Re-fetch
+jobCategoryInput.addEventListener('change', fetchJobs);
+
+// Changement de filtres avancés = Re-render local (Très rapide)
+filterTypeInput.addEventListener('change', applyFiltersAndRender);
+filterModeInput.addEventListener('change', applyFiltersAndRender);
+sortByInput.addEventListener('change', applyFiltersAndRender);
 
 // Tags clicking functionality
 document.querySelectorAll('.tag').forEach(tag => {
