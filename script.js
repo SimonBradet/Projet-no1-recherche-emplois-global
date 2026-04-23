@@ -4,7 +4,8 @@ const localDatabase = [
     {
         title: "Architecte Datacenter Senior",
         company_name: "Québec Cloud Solutions",
-        candidate_required_location: "Québec, QC (Hybride)",
+        candidate_required_location: "Québec, QC",
+        work_mode: "Hybride",
         job_type: "Temps plein",
         publication_date: new Date().toISOString(),
         salary: "110k$ - 140k$",
@@ -15,7 +16,8 @@ const localDatabase = [
     {
         title: "Spécialiste Sécurité & Lutte Anti-Rançongiciel",
         company_name: "CyberDefensio",
-        candidate_required_location: "Lévis, QC (Présentiel)",
+        candidate_required_location: "Lévis, QC",
+        work_mode: "Présentiel",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 86400000).toISOString(),
         salary: "95k$ - 130k$",
@@ -27,6 +29,7 @@ const localDatabase = [
         title: "Analyste de Relève TI",
         company_name: "Ministère des Technologies",
         candidate_required_location: "Québec, QC",
+        work_mode: "Présentiel",
         job_type: "Contrat",
         publication_date: new Date(Date.now() - 172800000).toISOString(),
         salary: "45$/h - 65$/h",
@@ -38,7 +41,8 @@ const localDatabase = [
     {
         title: "Développeur Fullstack React/Node",
         company_name: "Montréal Tech Hub",
-        candidate_required_location: "Montréal, QC (Hybride)",
+        candidate_required_location: "Montréal, QC",
+        work_mode: "Hybride",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 40000000).toISOString(),
         salary: "85k$ - 110k$",
@@ -50,6 +54,7 @@ const localDatabase = [
         title: "Ingénieur de Données (Data Engineer)",
         company_name: "FinTech MTL",
         candidate_required_location: "Montréal, QC",
+        work_mode: "Hybride",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 90000000).toISOString(),
         salary: "90k$ - 120k$",
@@ -61,7 +66,8 @@ const localDatabase = [
     {
         title: "DevOps Cloud Engineer",
         company_name: "Toronto Cloud Inc.",
-        candidate_required_location: "Toronto, ON (Remote)",
+        candidate_required_location: "Toronto, ON",
+        work_mode: "À distance",
         job_type: "Temps plein",
         publication_date: new Date(Date.now() - 50000000).toISOString(),
         salary: "100k$ - 130k$",
@@ -99,8 +105,8 @@ function translateKeyword(term) {
     return translated;
 }
 
-// Validation de localisation intelligente
-function isLocationMatch(jobLocation, searchLocation) {
+// Validation de localisation intelligente et stricte (Sprint 5)
+function isLocationMatch(jobLocation, searchLocation, radiusValue) {
     if (!searchLocation) return true;
     const jl = (jobLocation || '').toLowerCase();
     const sl = searchLocation.toLowerCase();
@@ -108,11 +114,22 @@ function isLocationMatch(jobLocation, searchLocation) {
     // Match direct
     if (jl.includes(sl) || sl.includes(jl)) return true;
     
-    // Règle spéciale : Les offres "Worldwide" ou "Americas" de l'API sont valides pour toute ville canadienne
+    // Règle de rayon (Si != "0", on veut du strict local)
+    const isStrictRadius = radiusValue !== "0";
+    
+    // Règle spéciale : Gestion des offres de l'API (qui sont principalement Worldwide)
     const isCanadianSearch = sl.includes('montréal') || sl.includes('montreal') || sl.includes('québec') || sl.includes('quebec') || sl.includes('toronto') || sl.includes('canada');
     if (isCanadianSearch) {
-        if (jl.includes('worldwide') || jl.includes('americas') || jl.includes('canada') || jl.includes('anywhere')) {
-            return true;
+        if (isStrictRadius) {
+            // SPRINT 5: Filtre Strict - Bloque les offres européennes/mondiales si une distance est exigée
+            if (jl === 'canada' || jl === 'canada only' || jl.includes('quebec') || jl.includes('qc')) {
+                return true;
+            }
+        } else {
+            // SPRINT 5: Filtre Partout - Permet les offres Worldwide/Americas (qui incluent le Canada)
+            if (jl.includes('worldwide') || jl.includes('americas') || jl.includes('canada') || jl.includes('anywhere')) {
+                return true;
+            }
         }
     }
     
@@ -134,7 +151,6 @@ let allFetchedJobs = [];
 async function fetchJobs(searchTerm = '') {
     const titleValue = jobTitleInput.value.toLowerCase().trim();
     const locationValue = jobLocationInput.value.toLowerCase().trim();
-    // Le radius pourrait être utilisé ici pour des API géospatiales, on le récupère pour le principe
     const radiusValue = jobRadiusInput ? jobRadiusInput.value : "50";
     
     // 1. Traduire les termes français pour l'API anglaise
@@ -148,13 +164,13 @@ async function fetchJobs(searchTerm = '') {
     try {
         let finalResults = [];
 
-        // ÉTAPE 1 : Chercher dans notre base de données locale (Montréal, Québec, Toronto, etc.)
+        // ÉTAPE 1 : Chercher dans notre base de données locale
         let localResults = localDatabase;
         if (titleValue) {
             localResults = localResults.filter(job => job.title.toLowerCase().includes(titleValue) || job.description.toLowerCase().includes(titleValue));
         }
         if (locationValue) {
-            localResults = localResults.filter(job => isLocationMatch(job.candidate_required_location, locationValue));
+            localResults = localResults.filter(job => isLocationMatch(job.candidate_required_location, locationValue, radiusValue));
         }
         
         finalResults = [...localResults];
@@ -174,14 +190,14 @@ async function fetchJobs(searchTerm = '') {
             const data = await response.json();
             const apiJobs = data.jobs || [];
             
-            // Filtrer les emplois de l'API selon la localisation intelligente
-            const filteredApiJobs = apiJobs.filter(job => isLocationMatch(job.candidate_required_location, locationValue));
+            // Filtrer les emplois de l'API selon la localisation intelligente et le rayon
+            const filteredApiJobs = apiJobs.filter(job => isLocationMatch(job.candidate_required_location, locationValue, radiusValue));
             
             // Ajouter les résultats de l'API à nos résultats locaux
             finalResults = [...finalResults, ...filteredApiJobs];
         }
 
-        // ÉTAPE 3 : Rendu final (limité à 40 pour la performance)
+        // ÉTAPE 3 : Rendu final
         finalResults = finalResults.slice(0, 40);
         allFetchedJobs = finalResults;
         
@@ -236,8 +252,8 @@ function renderJobs(jobsToRender) {
         jobsContainer.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                <h3>Aucun emploi trouvé</h3>
-                <p>Essayez d'élargir votre localisation (ex: "Canada") ou de vérifier l'orthographe.</p>
+                <h3>Aucun emploi trouvé dans ce rayon</h3>
+                <p>Essayez de changer le rayon de distance pour "Partout" afin d'inclure les offres en télétravail mondial.</p>
             </div>
         `;
         return;
@@ -255,9 +271,14 @@ function renderJobs(jobsToRender) {
         const jobType = job.job_type ? job.job_type.replace('_', ' ') : 'Non spécifié';
         const salary = job.salary ? job.salary : 'Salaire compétitif';
         
-        // Add a "Local" badge for mock data
-        const isLocal = !job.id; // Mock data doesn't have an ID from Remotive
+        const isLocal = !job.id; // Mock data
         const badgeHtml = isLocal ? `<span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 10px; font-weight: bold;">LOCAL</span>` : '';
+
+        // Mode de travail logic (Sprint 5)
+        const workMode = job.work_mode || "À distance"; // Les offres Remotive sont toujours à distance
+        let workModeIcon = "fa-laptop"; 
+        if (workMode.toLowerCase() === "hybride") workModeIcon = "fa-house-laptop";
+        if (workMode.toLowerCase() === "présentiel") workModeIcon = "fa-building";
 
         card.innerHTML = `
             <div class="job-header">
@@ -274,6 +295,7 @@ function renderJobs(jobsToRender) {
             
             <div class="job-meta">
                 <span><i class="fa-solid fa-location-dot"></i> ${job.candidate_required_location || 'Worldwide'}</span>
+                <span><i class="fa-solid ${workModeIcon}" style="color: var(--accent);"></i> ${workMode}</span>
                 <span><i class="fa-regular fa-clock"></i> ${formatDate(job.publication_date)}</span>
             </div>
             
